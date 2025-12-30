@@ -3,7 +3,7 @@ FROM node:20-alpine AS build-stage
 WORKDIR /app
 
 # Accept the API Key as a build argument
-ARG GEMINI_API_KEY
+ARG GEMINI_API_KEY="temporary_key_for_build
 
 COPY package*.json ./
 RUN npm install
