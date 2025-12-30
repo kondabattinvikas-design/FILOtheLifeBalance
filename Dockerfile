@@ -1,5 +1,5 @@
-# Stage 1: Build the React app
-FROM node:20-alpine AS build
+# Step 1: Build the React app
+FROM node:20-alpine AS build-stage
 WORKDIR /app
 
 # Accept the API Key as a build argument
@@ -10,18 +10,19 @@ RUN npm install
 
 COPY . .
 
-# Write the API Key to .env.local for Vite to find during build
+# Write the API Key to .env.local before building
+# Note: If you use this key in your React code, it should be VITE_GEMINI_API_KEY
 RUN echo "VITE_GEMINI_API_KEY=$GEMINI_API_KEY" > .env.local
 
 RUN npm run build
 
-# Stage 2: Serve the app with Nginx
+# Step 2: Serve the app using Nginx
 FROM nginx:alpine
-# Copy our custom config
+# Copy the custom nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-# Copy the built files from the build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+# Copy the build output from the first stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
 
 EXPOSE 8080
-# Run Nginx in the foreground
+
 CMD ["nginx", "-g", "daemon off;"]
