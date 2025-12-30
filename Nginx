@@ -4,7 +4,8 @@ server {
 
     location / {
         root /usr/share/nginx/html;
-        index index.html;
+        index index.html index.htm;
+        # This line is important for React routing
         try_files $uri $uri/ /index.html;
     }
 }
