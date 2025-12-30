@@ -1,34 +1,36 @@
-# --- STEP 1: Build the React app ---
+# STEP 1: Build the React app
 FROM node:20-alpine AS build-stage
 WORKDIR /app
 
-# Accept the API Key from Google Cloud Build
+# Accept the API Key
 ARG GEMINI_API_KEY
 ENV VITE_GEMINI_API_KEY=$GEMINI_API_KEY
 
-# Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
-
-# Copy all your project files
 COPY . .
 
-# Create the .env.local file so Vite sees the key during build
+# Create the .env file for Vite
 RUN echo "VITE_GEMINI_API_KEY=${GEMINI_API_KEY}" > .env.local
 
-# Run the build (This creates the 'dist' folder)
+# Build the app
 RUN npm run build
 
-# --- STEP 2: Serve the app with Nginx ---
+# STEP 2: Serve with Nginx
 FROM nginx:alpine
 
-# Copy our custom nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# --- FIX: We create the nginx config directly inside the Dockerfile ---
+RUN echo 'server { \
+    listen 8080; \
+    location / { \
+        root /usr/share/nginx/html; \
+        index index.html; \
+        try_files $uri $uri/ /index.html; \
+    } \
+}' > /etc/nginx/conf.d/default.conf
 
-# Copy the build output from the build-stage
-# Vite always puts the final website in 'dist'
+# Copy the build output (dist folder)
 COPY --from=build-stage /app/dist /usr/share/nginx/html
 
 EXPOSE 8080
-
 CMD ["nginx", "-g", "daemon off;"]
